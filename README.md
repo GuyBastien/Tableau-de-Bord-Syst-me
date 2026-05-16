@@ -32,7 +32,7 @@ pip3 install flask flask-cors psutil --break-system-packages
 
 ## 🔄 Rafraîchissement
 
-Dashboard aktualize chak **2 secondes** otomatikman.
+Dashboard aktyalize chak **2 secondes** otomatikman.
 
 ## ⚠️ Alertes automatiques
 
