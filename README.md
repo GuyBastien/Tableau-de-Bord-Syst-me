@@ -1,6 +1,6 @@
 # 🖥️ Parrot OS — Web Dashboard
 
-Dashboard sistem an tan reyèl pou Parrot OS. Bèl entèfas cyberpunk ki montre CPU, RAM, disk, rezo ak proses.
+Dashboard sistem an tan reyèl pou Parrot OS. Bèl entèfas ki montre CPU, RAM, disk, rezo ak proses.
 
 ## ⚡ Lanse rapid
 
