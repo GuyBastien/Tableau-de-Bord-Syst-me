@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tableau de Bord • Système</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg:          #f7f5f0;
+    --surface:     #ffffff;
+    --card-border: #e9e2d4;
+    --text-main:   #2c2823;
+    --text-soft:   #6b6258;
+    --text-light:  #9b9288;
+    --accent:      #d46b4a;
+    --accent-soft: #e9cbbd;
+    --accent2:     #5f8b6f;
+    --accent2-soft:#cde0d4;
+    --warm:        #e0a878;
+    --warm-light:  #f3e3d4;
+    --danger:      #c45a5a;
+    --chart-green: #7c9e7e;
+    --chart-blue:  #6f9eb3;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    line-height: 1.45;
+    padding: 28px 24px;
+  }
+
+  /* grille douce en fond */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(#ddd6cc 0.8px, transparent 0.8px);
+    background-size: 32px 32px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* layout principal */
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* header épuré, humain */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .title-section h1 {
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+    color: var(--text-main);
+  }
+
+  .title-section p {
+    font-size: 14px;
+    color: var(--text-soft);
+    margin-top: 6px;
+  }
+
+  .header-stats {
+    text-align: right;
+  }
+
+  #clock {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent2);
+    background: var(--accent2-soft);
+    padding: 4px 14px;
+    border-radius: 60px;
+    display: inline-block;
+  }
+
+  #hostname {
+    font-size: 13px;
+    margin-top: 8px;
+    color: var(--text-soft);
+  }
+
+  /* cartes */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: 24px;
+    border: 1px solid var(--card-border);
+    padding: 20px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  }
+
+  .card:hover {
+    border-color: var(--warm);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .card-header .icon {
+    font-size: 20px;
+  }
+
+  .card-header h3 {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* gauges minimales circulaires */
+  .gauge-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .gauge {
+    position: relative;
+    width: 100px;
+    height: 100px;
+  }
+
+  .gauge svg {
+    transform: rotate(-90deg);
+  }
+
+  .gauge-bg {
+    fill: none;
+    stroke: #e3dcd2;
+    stroke-width: 6;
+  }
+
+  .gauge-fill {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+  }
+
+  .gauge-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gauge-percent {
+    font-size: 20px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .gauge-label {
+    font-size: 10px;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
+
+  .stats-block {
+    flex: 1;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    color: var(--text-soft);
+  }
+
+  .stat-value {
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* barres de progression douces */
+  .progress-bar {
+    background: #efe8df;
+    border-radius: 30px;
+    height: 6px;
+    overflow: hidden;
+    margin: 10px 0;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 30px;
+    transition: width 0.4s;
+  }
+
+  /* cores en petits badges */
+  .cores-mini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .core-chip {
+    background: var(--warm-light);
+    padding: 8px 10px;
+    border-radius: 40px;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    min-width: 58px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+  }
+
+  /* réseau */
+  .net-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .net-item:last-child {
+    border: none;
+  }
+
+  /* table processes */
+  .proc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .proc-table th {
+    text-align: left;
+    font-weight: 500;
+    color: var(--text-soft);
+    padding: 8px 4px 12px 0;
+    border-bottom: 1px solid var(--card-border);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .proc-table td {
+    padding: 10px 4px 10px 0;
+    border-bottom: 1px solid #f0eae2;
+  }
+
+  .proc-table tr:hover td {
+    background-color: #faf7f2;
+  }
+
+  /* disk row */
+  .disk-item {
+    margin-bottom: 14px;
+  }
+
+  /* info grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .info-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-light);
+    letter-spacing: 0.4px;
+  }
+
+  .info-value {
+    font-weight: 500;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  /* alert bar discrète */
+  .alert-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    max-width: 380px;
+    background: #fffaf0;
+    border-left: 4px solid var(--danger);
+    padding: 12px 18px;
+    border-radius: 40px;
+    font-size: 13px;
+    color: #6b4e4e;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    font-family: 'Inter', monospace;
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    transition: 0.2s;
+    display: none;
+  }
+
+  /* responsive */
+  @media (max-width: 900px) {
+    body { padding: 16px; }
+    .grid > * { grid-column: span 12 !important; }
+    header { flex-direction: column; gap: 12px; }
+    .header-stats { text-align: left; }
+  }
+
+  .col-span-3 { grid-column: span 3; }
+  .col-span-4 { grid-column: span 4; }
+  .col-span-5 { grid-column: span 5; }
+  .col-span-6 { grid-column: span 6; }
+  .col-span-12 { grid-column: span 12; }
+
+  hr {
+    margin: 8px 0;
+    border: none;
+    border-top: 1px solid var(--card-border);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="title-section">
+      <h1>✦ moniteur système</h1>
+      <p>ressources • processus • mémoires</p>
+    </div>
+    <div class="header-stats">
+      <div id="clock">--:--:--</div>
+      <div id="hostname" style="font-size:13px; margin-top:8px;">---</div>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- CPU -->
+    <div class="card col-span-3">
+      <div class="card-header">
+        <span class="icon">⚙️</span>
+        <h3>processeur</h3>
+      </div>
+      <div class="gauge-row">
+        <div class="gauge">
+          <svg viewBox="0 0 80 80" width="80" height="80">
+            <circle class="gauge-bg" cx="40" cy="40" r="34"/>
+            <circle class="gauge-fill" id="cpu-fill-ring" cx="40" cy="40" r="34" stroke="var(--accent)" stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+          </svg>
+          <div class="gauge-center">
+            <span class="gauge-percent" id="cpu-pct">0%</span>
+            <span class="gauge-label">charge</span>
+          </div>
+        </div>
+        <div class="stats-block">
+          <div class="stat-row"><span class="stat-label">fréquence</span><span class="stat-value" id="cpu-freq">---</span></div>
+          <div class="stat-row"><span class="stat-label">cœurs logiques</span><span class="stat-value" id="cpu-cores">--</span></div>
+          <div class="stat-row"><span class="stat-label">physiques</span><span class="stat-value" id="cpu-physical">--</span></div>
+        </div>
+      </div>
+      <hr>
+      <div style="font-size:12px; color:var(--text-soft); margin-bottom:10px;">charge par cœur</div>
+      <div id="cores-list" class="cores-mini"></div>
+    </div>
+
+    <!-- Mémoire RAM -->
+    <div class="card col-span-3">
+      <div class="card-header">
+        <span class="icon">🧠</span>
+        <h3>mémoire vive</h3>
+      </div>
+      <div class="gauge-row">
+        <div class="gauge">
+          <svg viewBox="0 0 80 80" width="80" height="80">
+            <circle class="gauge-bg" cx="40" cy="40" r="34"/>
+            <circle class="gauge-fill" id="ram-fill-ring" cx="40" cy="40" r="34" stroke="var(--accent2)" stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+          </svg>
+          <div class="gauge-center">
+            <span class="gauge-percent" id="ram-pct">0%</span>
+            <span class="gauge-label">utilisée</span>
+          </div>
+        </div>
+        <div class="stats-block">
+          <div class="stat-row"><span class="stat-label">utilisée</span><span class="stat-value" id="ram-used">---</span></div>
+          <div class="stat-row"><span class="stat-label">totale</span><span class="stat-value" id="ram-total">---</span></div>
+          <div class="stat-row"><span class="stat-label">swap</span><span class="stat-value" id="swap-info">---</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Système / Infos chaleureuses -->
+    <div class="card col-span-3">
+      <div class="card-header">
+        <span class="icon">🍃</span>
+        <h3>à propos</h3>
+      </div>
+      <div class="info-grid">
+        <div><div class="info-label">système</div><div class="info-value" id="sys-os">---</div></div>
+        <div><div class="info-label">noyau</div><div class="info-value" id="sys-kernel">---</div></div>
+        <div><div class="info-label">architecture</div><div class="info-value" id="sys-arch">---</div></div>
+        <div><div class="info-label">température</div><div class="info-value" id="sys-temp">---</div></div>
+      </div>
+      <hr>
+      <div><div class="info-label">en marche depuis</div><div class="info-value" id="uptime" style="font-size:18px; font-weight:500;">---</div></div>
+      <div style="margin-top:6px;"><span class="info-label">démarrage</span> <span id="boot-time" class="stat-value" style="font-size:12px;"></span></div>
+    </div>
+
+    <!-- réseau simple -->
+    <div class="card col-span-3">
+      <div class="card-header">
+        <span class="icon">🌿</span>
+        <h3>réseau</h3>
+      </div>
+      <div id="iface-badge" style="font-size:12px; background:#f3efe8; padding:6px 12px; border-radius:40px; margin-bottom:14px; display:inline-block;"></div>
+      <div class="net-item"><span class="stat-label">⬆ envoyé</span><span class="stat-value" id="net-sent">---</span></div>
+      <div class="net-item"><span class="stat-label">⬇ reçu</span><span class="stat-value" id="net-recv">---</span></div>
+      <div class="net-item"><span class="stat-label">paquets envoyés</span><span class="stat-value" id="net-psent">---</span></div>
+      <div class="net-item"><span class="stat-label">paquets reçus</span><span class="stat-value" id="net-precv">---</span></div>
+    </div>
+
+    <!-- Stockage -->
+    <div class="card col-span-6">
+      <div class="card-header">
+        <span class="icon">📀</span>
+        <h3>disques & stockage</h3>
+      </div>
+      <div id="disk-list"></div>
+    </div>
+
+    <!-- Processus (top) -->
+    <div class="card col-span-6">
+      <div class="card-header">
+        <span class="icon">🌀</span>
+        <h3>processus actifs</h3>
+      </div>
+      <table class="proc-table">
+        <thead><tr><th>PID</th><th>nom</th><th>CPU</th><th>MÉMOIRE</th><th>état</th></tr></thead>
+        <tbody id="proc-tbody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<div id="alert-toast" class="alert-toast">🌿</div>
+
+<script>
+  const API_URL = 'http://localhost:5000/api/stats';
+  const CIRC = 213.628; // 2*pi*34 ≈ 213.628
+
+  // helpers
+  function formatBytes(bytes, decimals = 1) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  function formatUptime(seconds) {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (days > 0) return `${days}j ${hours}h`;
+    if (hours > 0) return `${hours}h ${mins}min`;
+    return `${mins} min`;
+  }
+
+  function setGauge(ringId, percent) {
+    const ring = document.getElementById(ringId);
+    if (!ring) return;
+    const offset = CIRC - (percent / 100) * CIRC;
+    ring.style.strokeDashoffset = offset;
+  }
+
+  function getColorForPercent(p) {
+    if (p > 80) return '#c45a5a';
+    if (p > 60) return '#e0a878';
+    return '#7c9e7e';
+  }
+
+  let alertTimeout = null;
+  function showSoftAlert(msg) {
+    const toast = document.getElementById('alert-toast');
+    toast.textContent = `✨ ${msg}`;
+    toast.style.display = 'flex';
+    if (alertTimeout) clearTimeout(alertTimeout);
+    alertTimeout = setTimeout(() => {
+      toast.style.display = 'none';
+    }, 4200);
+  }
+
+  let alertCpu = false, alertRam = false;
+
+  function render(data) {
+    if (!data) return;
+
+    const { cpu, ram, disk, network, processes, system } = data;
+
+    // hostname & clock handled separately
+    if (system?.hostname) document.getElementById('hostname').innerHTML = `🖥️ ${system.hostname}`;
+
+    // CPU
+    const cpuPercent = cpu?.percent ?? 0;
+    document.getElementById('cpu-pct').innerText = Math.round(cpuPercent) + '%';
+    setGauge('cpu-fill-ring', cpuPercent);
+    document.getElementById('cpu-fill-ring').style.stroke = getColorForPercent(cpuPercent);
+    document.getElementById('cpu-freq').innerText = cpu?.freq_current ? `${cpu.freq_current} MHz` : '—';
+    document.getElementById('cpu-cores').innerText = cpu?.cores_logical ?? '—';
+    document.getElementById('cpu-physical').innerText = cpu?.cores_physical ?? '—';
+
+    // cores per core
+    const coresGrid = document.getElementById('cores-list');
+    if (cpu?.per_core) {
+      coresGrid.innerHTML = cpu.per_core.map((load, idx) => `
+        <div class="core-chip" style="background: #f0e7de; color:${getColorForPercent(load)};">
+          C${idx} ${Math.round(load)}%
+        </div>
+      `).join('');
+    } else {
+      coresGrid.innerHTML = '<div class="core-chip">—</div>';
+    }
+
+    // RAM
+    const ramPercent = ram?.percent ?? 0;
+    document.getElementById('ram-pct').innerText = Math.round(ramPercent) + '%';
+    setGauge('ram-fill-ring', ramPercent);
+    document.getElementById('ram-fill-ring').style.stroke = getColorForPercent(ramPercent);
+    if (ram) {
+      document.getElementById('ram-used').innerText = formatBytes(ram.used);
+      document.getElementById('ram-total').innerText = formatBytes(ram.total);
+      document.getElementById('swap-info').innerHTML = `${formatBytes(ram.swap_used)} / ${formatBytes(ram.swap_total)} (${ram.swap_percent}%)`;
+    }
+
+    // System info
+    if (system) {
+      document.getElementById('sys-os').innerText = system.os || '—';
+      document.getElementById('sys-kernel').innerText = system.kernel || '—';
+      document.getElementById('sys-arch').innerText = system.arch || '—';
+      const tempValue = system.temperatures && Object.values(system.temperatures).length ? Object.values(system.temperatures)[0] + '°C' : '—';
+      document.getElementById('sys-temp').innerHTML = tempValue !== '—' ? `<span style="font-family:monospace;">${tempValue}</span>` : 'n/a';
+      document.getElementById('uptime').innerText = system.uptime || '—';
+      document.getElementById('boot-time').innerText = system.boot_time || '—';
+    }
+
+    // Network
+    if (network) {
+      document.getElementById('net-sent').innerHTML = `<span style="color:#5f8b6f;">⬆ ${formatBytes(network.bytes_sent)}</span>`;
+      document.getElementById('net-recv').innerHTML = `<span style="color:#5f8b6f;">⬇ ${formatBytes(network.bytes_recv)}</span>`;
+      document.getElementById('net-psent').innerText = network.packets_sent?.toLocaleString() ?? '0';
+      document.getElementById('net-precv').innerText = network.packets_recv?.toLocaleString() ?? '0';
+      const ifaces = network.interfaces ? Object.keys(network.interfaces).slice(0, 2).map(k => k).join(', ') : '—';
+      document.getElementById('iface-badge').innerHTML = `🔌 ${ifaces || 'interface'}`;
+    }
+
+    // Disks
+    const diskContainer = document.getElementById('disk-list');
+    if (disk?.partitions) {
+      diskContainer.innerHTML = disk.partitions.slice(0, 4).map(d => {
+        const percent = d.percent || 0;
+        const color = getColorForPercent(percent);
+        return `
+          <div class="disk-item">
+            <div style="display:flex; justify-content:space-between; font-size:13px;">
+              <span><span style="font-family:monospace;">${d.mountpoint}</span> &nbsp; ${d.device || ''}</span>
+              <span>${formatBytes(d.used)} / ${formatBytes(d.total)}</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${percent}%; background:${color};"></div></div>
+            <div style="font-size:11px; color:var(--text-soft); margin-top:4px;">${percent}% utilisé</div>
+          </div>
+        `;
+      }).join('');
+      if (disk.partitions.length === 0) diskContainer.innerHTML = '<div class="info-value">aucun disque monté</div>';
+    }
+
+    // Processes top 7
+    const procBody = document.getElementById('proc-tbody');
+    if (processes && processes.length) {
+      procBody.innerHTML = processes.slice(0, 8).map(p => `
+        <tr>
+          <td style="font-family:monospace; color:#7e6e5e;">${p.pid}</td>
+          <td style="font-weight:500;">${p.name || '—'}</td>
+          <td style="color:${getColorForPercent(p.cpu_percent || 0)}; font-weight:500;">${(p.cpu_percent || 0).toFixed(1)}%</td>
+          <td style="color:${getColorForPercent(p.memory_percent || 0)};">${(p.memory_percent || 0).toFixed(1)}%</td>
+          <td style="color:#8f887c;">${p.status || '—'}</td>
+        </tr>
+      `).join('');
+    } else {
+      procBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-soft);">aucune donnée</td></tr>';
+    }
+
+    // alerts humaines non intrusives
+    if (cpuPercent > 88 && !alertCpu) {
+      alertCpu = true;
+      showSoftAlert(`Le processeur est très sollicité (${Math.round(cpuPercent)}%) — quelques processus peuvent ralentir.`);
+    } else if (cpuPercent < 75) alertCpu = false;
+
+    if (ramPercent > 90 && !alertRam) {
+      alertRam = true;
+      showSoftAlert(`Mémoire vive à ${Math.round(ramPercent)}% — fermer certaines applications peut aider.`);
+    } else if (ramPercent < 80) alertRam = false;
+  }
+
+  async function fetchSystemStats() {
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error('API not reachable');
+      const json = await res.json();
+      render(json);
+    } catch (err) {
+      console.warn('API indisponible, mode silencieux');
+      // affichage minimal sans casser l'interface : on garde les dernières données
+    }
+  }
+
+  // horloge vivante
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').innerText = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute:'2-digit', second:'2-digit' });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  fetchSystemStats();
+  setInterval(fetchSystemStats, 2300);
+</script>
+</body>
+</html>
